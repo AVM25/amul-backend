@@ -18,7 +18,7 @@ interface TestNotificationRequest {
 router.post('/test-notification', async (req: Request<{}, {}, TestNotificationRequest>, res: Response): Promise<void> => {
   try {
     const { email, productId, telegramUsername } = req.body;
-    
+    console.log("➡️ Sending test notification to:", email, telegramUsername);
     if (!email || !productId) {
       res.status(400).json({
         success: false,
