@@ -16,69 +16,52 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
     let restockedCount = 0;
 
     for (const productData of products) {
-      // 🧹 Skip hidden or out-of-scope products
-      if (
-        productData.catalog_only ||
-        productData.is_catalog ||
-        productData.name.toLowerCase().includes('sample')
-      ) {
-        console.log(`⏭️ Skipping catalog-only or sample product: ${productData.name}`);
-        continue;
-      }
-
-      try {
-        const existingProduct = await Product.findOne({ productId: productData._id });
-
-        if (existingProduct) {
-          const wasOutOfStock = existingProduct.inventoryQuantity === 0;
-          const nowInStock = productData.inventory_quantity > 0;
-
-          if (wasOutOfStock && nowInStock) {
-            console.log(`📦 Restocked: ${productData.name}`);
-            await notifySubscribers(existingProduct, productData);
-            restockedCount++;
-          }
-
-          await Product.findOneAndUpdate(
-            { productId: productData._id },
-            {
-              inventoryQuantity: productData.inventory_quantity,
-              lastChecked: new Date(),
-              wasOutOfStock: productData.inventory_quantity === 0,
-              price: productData.price,
-              name: productData.name,
-              isActive: true
-            }
-          );
-          updatedCount++;
-          console.log(`🔁 Updated: ${productData.name}`);
-        } else {
-          const newProduct = new Product({
-            productId: productData._id,
-            name: productData.name,
-            alias: productData.alias,
-            price: productData.price,
-            inventoryQuantity: productData.inventory_quantity,
-            image: productData.images?.[0]?.image
-              ? `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image}`
-              : undefined,
-            brand: productData.brand,
-            wasOutOfStock: productData.inventory_quantity === 0,
-            isActive: true
-          });
-
-          await newProduct.save();
-          addedCount++;
-          console.log(`➕ Added new product: ${productData.name}`);
+      const existingProduct = await Product.findOne({ productId: productData._id });
+      
+      if (existingProduct) {
+        const wasOutOfStock = existingProduct.inventoryQuantity === 0;
+        const nowInStock = productData.inventory_quantity > 0;
+        
+        if (wasOutOfStock && nowInStock) {
+          console.log(`📦 Product ${productData.name} is back in stock!`);
+          await notifySubscribers(existingProduct, productData);
+          restockedCount++;
         }
-      } catch (err) {
-        console.error(`❌ Error saving product ${productData.name}:`, err);
+        
+        await Product.findOneAndUpdate(
+          { productId: productData._id },
+          {
+            inventoryQuantity: productData.inventory_quantity,
+            lastChecked: new Date(),
+            wasOutOfStock: productData.inventory_quantity === 0,
+            price: productData.price,
+            name: productData.name,
+            isActive: true
+          }
+        );
+        updatedCount++;
+      } else {
+        const newProduct = new Product({
+          productId: productData._id,
+          name: productData.name,
+          alias: productData.alias,
+          price: productData.price,
+          inventoryQuantity: productData.inventory_quantity,
+          image: productData.images && productData.images.length > 0 ? 
+                `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image}` : undefined,
+          brand: productData.brand,
+          wasOutOfStock: productData.inventory_quantity === 0,
+          isActive: true
+        });
+        await newProduct.save();
+        addedCount++;
+        console.log(`➕ Added new product: ${productData.name}`);
       }
     }
-
-    console.log(`✅ Sync finished - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount}`);
+    
+    console.log(`✅ Products sync completed - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount}`);
   } catch (error) {
-    console.error('❌ Error fetching from Amul:', error);
+    console.error('❌ Error fetching products:', error instanceof Error ? error.message : 'Unknown error');
     throw error;
   }
 };
