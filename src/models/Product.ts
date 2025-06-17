@@ -15,8 +15,7 @@ const productSchema = new Schema<IProduct>({
   timestamps: true
 });
 
-// Indexes for better performance
-productSchema.index({ productId: 1 });
+// Keep only extra helpful indexes
 productSchema.index({ inventoryQuantity: 1 });
 productSchema.index({ lastChecked: 1 });
 
