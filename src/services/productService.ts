@@ -1,100 +1,78 @@
+import axios from 'axios';
 import { Product } from '@/models/Product';
+import { AmulProductData } from '@/types';
 import { notifySubscribers } from './emailService';
 
-interface FetchedProduct {
-  _id: string;
-  name: string;
-  alias?: string;
-  price: number;
-  inventory_quantity: number;
-  images?: { image: string }[];
-  brand?: string;
-}
+// ✅ Amul API URL
+const AMUL_API_URL = 'https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[images]=1&fields[available]=1&fields[inventory_quantity]=1&limit=32&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&substore=66506000c8f2d6e221b9193a';
 
 export const fetchAndUpdateProducts = async (): Promise<void> => {
   try {
-    console.log('🔄 Launching Puppeteer...');
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
+    console.log('🔄 Fetching products from Amul API...');
+    const response = await axios.get<{ data: AmulProductData[] }>(AMUL_API_URL);
+    const products = response.data.data;
 
-    await page.goto('https://shop.amul.com/en/browse/protein', {
-      waitUntil: 'networkidle2',
-    });
-
-    // Wait for products to load in window.__INITIAL_STATE__
-    const productsData = await page.evaluate(() => {
-      // @ts-ignore
-      const state = window.__INITIAL_STATE__;
-      const entities = state?.entities?.['ms.products'];
-      return entities ? Object.values(entities) : [];
-    });
-
-    await browser.close();
-
-    if (!productsData || !Array.isArray(productsData)) {
-      console.warn('⚠️ No products found in Puppeteer scrape');
-      return;
-    }
+    console.log('🧪 Fetched Amul Products:', products.length);
 
     let updatedCount = 0;
     let addedCount = 0;
     let restockedCount = 0;
 
-    for (const productData of productsData as FetchedProduct[]) {
-      const existingProduct = await Product.findOne({ productId: productData._id });
+    for (const product of products) {
+      const existing = await Product.findOne({ productId: product._id });
 
-      if (existingProduct) {
-        const wasOutOfStock = existingProduct.inventoryQuantity === 0;
-        const nowInStock = productData.inventory_quantity > 0;
+      if (existing) {
+        const wasOutOfStock = existing.inventoryQuantity === 0;
+        const nowInStock = product.inventory_quantity > 0;
 
         if (wasOutOfStock && nowInStock) {
-          console.log(`📦 Product ${productData.name} is back in stock!`);
-          await notifySubscribers(existingProduct, productData);
+          console.log(`📦 Restocked: ${product.name}`);
+          await notifySubscribers(existing, product);
           restockedCount++;
         }
 
         await Product.findOneAndUpdate(
-          { productId: productData._id },
+          { productId: product._id },
           {
-            inventoryQuantity: productData.inventory_quantity,
+            name: product.name,
+            price: product.price,
+            inventoryQuantity: product.inventory_quantity,
             lastChecked: new Date(),
-            wasOutOfStock: productData.inventory_quantity === 0,
-            price: productData.price,
-            name: productData.name,
-            image: productData.images?.[0]?.image
-              ? `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image}`
-              : undefined,
-            brand: productData.brand,
+            wasOutOfStock: product.inventory_quantity === 0,
             isActive: true,
+            brand: product.brand,
+            image: product.images?.[0]?.image
+              ? `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${product.images[0].image}`
+              : undefined,
           }
         );
+
         updatedCount++;
       } else {
         const newProduct = new Product({
-          productId: productData._id,
-          name: productData.name,
-          alias: productData.alias,
-          price: productData.price,
-          inventoryQuantity: productData.inventory_quantity,
-          image: productData.images?.[0]?.image
-            ? `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image}`
-            : undefined,
-          brand: productData.brand,
-          wasOutOfStock: productData.inventory_quantity === 0,
-          isActive: true,
+          productId: product._id,
+          name: product.name,
+          alias: product.alias,
+          price: product.price,
+          inventoryQuantity: product.inventory_quantity,
           lastChecked: new Date(),
+          wasOutOfStock: product.inventory_quantity === 0,
+          isActive: true,
+          brand: product.brand,
+          image: product.images?.[0]?.image
+            ? `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${product.images[0].image}`
+            : undefined,
         });
+
         await newProduct.save();
         addedCount++;
-        console.log(`➕ Added new product: ${productData.name}`);
+        console.log(`➕ Added new product: ${product.name}`);
       }
     }
 
-    console.log(
-      `✅ Products sync completed - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount}`
-    );
+    console.log(`✅ Sync complete: Updated ${updatedCount}, Added ${addedCount}, Restocked ${restockedCount}`);
   } catch (error) {
-    console.error('❌ Error in Puppeteer product fetch:', error);
+    console.error('❌ Failed to fetch/update products:', error);
     throw error;
   }
 };
