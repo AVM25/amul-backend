@@ -1,7 +1,7 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
 import mongoose from 'mongoose';
-import Product from '../models/product';
+import Product from '../models/Product';
 
 const scrapeProtein = async () => {
   try {
