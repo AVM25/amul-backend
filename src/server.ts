@@ -9,6 +9,7 @@ import subscriptionRoutes from '@/routes/subscriptionRoutes';
 import healthRoutes from '@/routes/healthRoutes';
 import testEmailRoutes from '@/routes/testEmailRoutes';
 import telegramRoutes from './routes/telegramRoutes';
+import scrapeProtein from './utils/scrapeProtein';
 
 dotenv.config();
 
@@ -37,15 +38,18 @@ async function startServer(): Promise<void> {
   try {
     // Connect to MongoDB
     await connectDB();
-    
+
+    // Scrape protein products
+    await scrapeProtein();
+
     // Initial data fetch
     console.log('Fetching initial product data...');
     await fetchAndUpdateProducts();
     console.log('Initial data fetch completed');
-    
+
     // Start cron jobs
     startCronJobs();
-    
+
     // Start server
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
