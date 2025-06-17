@@ -8,7 +8,16 @@ const AMUL_API_URL = 'https://shop.amul.com/api/1/entity/ms.products?fields[name
 export const fetchAndUpdateProducts = async (): Promise<void> => {
   try {
     console.log('🔄 Fetching products from Amul API...');
-    const response = await axios.get<{ data: AmulProductData[] }>(AMUL_API_URL);
+    const response = await axios.get<{ data: AmulProductData[] }>(AMUL_API_URL, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0',
+        'Accept': 'application/json, text/plain, */*',
+        'Referer': 'https://shop.amul.com/en/browse/protein',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Cookie': '_cfuvid=oFu4q07yxwIVzoRg5Y6frrceVMxQnirXppAZThE4ZOw-1745737037868-0.0.1.1-604800000; jsessionid=s%3AFr6HVUyQDQg%2B%2BIKPn4kSBa5n.s5tL5uqoOV%2B0p691WrO4etU7s5erp7KlC7aMDOsf5bQ; __cf_bm=xoSPrAA1ZDI0QI1zm06B3qJj721gAE3eJyWCBhhFQvo-1750167798-1.0.1.1-xe6HRVcNLpI.gS47n7zyO2jpmTzVEVIbGln2YuMAmHACQwHwI34lZuAYBC.etnXXd28EmVo1NKyinm3poWwJ8kfQWdZEURJhueEcDBdbPS0',
+      },
+    });
+
     console.log('🧪 Full Amul API Response:', JSON.stringify(response.data, null, 2));
     const products: AmulProductData[] = response.data.data;
     console.log("🧪 Amul Products Response Sample:", JSON.stringify(products.slice(0, 1), null, 2));
