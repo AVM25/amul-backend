@@ -3,7 +3,7 @@ import { Product } from '@/models/Product';
 import { AmulProductData } from '@/types';
 import { notifySubscribers } from './emailService';
 
-const AMUL_API_URL = 'https://shop.amul.com/api/1/entity/ms.products?...'; // keep as-is
+const AMUL_API_URL = 'https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=24&total=1&start=0&cdc=1m&substore=66505ff0998183e1b1935c75';
 
 export const fetchAndUpdateProducts = async (): Promise<void> => {
   try {
@@ -16,6 +16,16 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
     let restockedCount = 0;
 
     for (const productData of products) {
+      // 🧹 Skip hidden or out-of-scope products
+      if (
+        productData.catalog_only ||
+        productData.is_catalog ||
+        productData.name.toLowerCase().includes('sample')
+      ) {
+        console.log(`⏭️ Skipping catalog-only or sample product: ${productData.name}`);
+        continue;
+      }
+
       try {
         const existingProduct = await Product.findOne({ productId: productData._id });
 
@@ -24,7 +34,7 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
           const nowInStock = productData.inventory_quantity > 0;
 
           if (wasOutOfStock && nowInStock) {
-            console.log(`📦 Product back in stock: ${productData.name}`);
+            console.log(`📦 Restocked: ${productData.name}`);
             await notifySubscribers(existingProduct, productData);
             restockedCount++;
           }
@@ -40,9 +50,8 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
               isActive: true
             }
           );
-          console.log(`🔁 Updated product: ${productData.name}`);
           updatedCount++;
-
+          console.log(`🔁 Updated: ${productData.name}`);
         } else {
           const newProduct = new Product({
             productId: productData._id,
@@ -59,17 +68,17 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
           });
 
           await newProduct.save();
-          console.log(`➕ Saved new product: ${productData.name}`);
           addedCount++;
+          console.log(`➕ Added new product: ${productData.name}`);
         }
-      } catch (innerError) {
-        console.error(`❌ Failed processing product ${productData.name}:`, innerError);
+      } catch (err) {
+        console.error(`❌ Error saving product ${productData.name}:`, err);
       }
     }
 
-    console.log(`✅ Products sync completed - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount}`);
+    console.log(`✅ Sync finished - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount}`);
   } catch (error) {
-    console.error('❌ Error fetching products:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ Error fetching from Amul:', error);
     throw error;
   }
 };
