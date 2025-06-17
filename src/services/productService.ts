@@ -11,6 +11,7 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
     console.log('🔄 Fetching products from Amul API...');
     const response = await axios.get<{ data: AmulProductData[] }>(AMUL_API_URL);
     const products: AmulProductData[] = response.data.data;
+    console.log("🧪 Amul Products Response Sample:", JSON.stringify(products.slice(0, 1), null, 2));
 
     let updatedCount = 0;
     let addedCount = 0;
