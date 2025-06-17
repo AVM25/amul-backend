@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer';
 import { Product } from '@/models/Product';
 import { notifySubscribers } from './emailService';
 
