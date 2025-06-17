@@ -23,7 +23,7 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
         const nowInStock = productData.inventory_quantity > 0;
         
         if (wasOutOfStock && nowInStock) {
-          console.log(`📦 Product ${productData.name} is back in stock!`);
+          console.log(📦 Product ${productData.name} is back in stock!);
           await notifySubscribers(existingProduct, productData);
           restockedCount++;
         }
@@ -48,18 +48,18 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
           price: productData.price,
           inventoryQuantity: productData.inventory_quantity,
           image: productData.images && productData.images.length > 0 ? 
-                `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image}` : undefined,
+                https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image} : undefined,
           brand: productData.brand,
           wasOutOfStock: productData.inventory_quantity === 0,
           isActive: true
         });
         await newProduct.save();
         addedCount++;
-        console.log(`➕ Added new product: ${productData.name}`);
+        console.log(➕ Added new product: ${productData.name});
       }
     }
     
-    console.log(`✅ Products sync completed - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount}`);
+    console.log(✅ Products sync completed - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount});
   } catch (error) {
     console.error('❌ Error fetching products:', error instanceof Error ? error.message : 'Unknown error');
     throw error;
