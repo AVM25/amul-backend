@@ -17,29 +17,37 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
 
     for (const productData of products) {
       const existingProduct = await Product.findOne({ productId: productData._id });
-      
+
       if (existingProduct) {
         const wasOutOfStock = existingProduct.inventoryQuantity === 0;
         const nowInStock = productData.inventory_quantity > 0;
-        
+
         if (wasOutOfStock && nowInStock) {
-          console.log(📦 Product ${productData.name} is back in stock!);
+          console.log(`📦 Product ${productData.name} is back in stock!`);
           await notifySubscribers(existingProduct, productData);
           restockedCount++;
         }
-        
-        await Product.findOneAndUpdate(
+
+        const result = await Product.updateOne(
           { productId: productData._id },
           {
-            inventoryQuantity: productData.inventory_quantity,
-            lastChecked: new Date(),
-            wasOutOfStock: productData.inventory_quantity === 0,
-            price: productData.price,
-            name: productData.name,
-            isActive: true
+            $set: {
+              inventoryQuantity: productData.inventory_quantity,
+              lastChecked: new Date(),
+              wasOutOfStock: productData.inventory_quantity === 0,
+              price: productData.price,
+              name: productData.name,
+              isActive: true
+            }
           }
         );
-        updatedCount++;
+
+        if (result.modifiedCount > 0) {
+          console.log(`🔁 Updated product: ${productData.name}`);
+          updatedCount++;
+        } else {
+          console.log(`ℹ️ No changes for product: ${productData.name}`);
+        }
       } else {
         const newProduct = new Product({
           productId: productData._id,
@@ -47,19 +55,21 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
           alias: productData.alias,
           price: productData.price,
           inventoryQuantity: productData.inventory_quantity,
-          image: productData.images && productData.images.length > 0 ? 
-                https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image} : undefined,
+          image:
+            productData.images && productData.images.length > 0
+              ? `https://shop.amul.com/s/62fa94df8c13af2e242eba16/${productData.images[0].image}`
+              : undefined,
           brand: productData.brand,
           wasOutOfStock: productData.inventory_quantity === 0,
           isActive: true
         });
         await newProduct.save();
         addedCount++;
-        console.log(➕ Added new product: ${productData.name});
+        console.log(`➕ Added new product: ${productData.name}`);
       }
     }
-    
-    console.log(✅ Products sync completed - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount});
+
+    console.log(`✅ Products sync completed - Updated: ${updatedCount}, Added: ${addedCount}, Restocked: ${restockedCount}`);
   } catch (error) {
     console.error('❌ Error fetching products:', error instanceof Error ? error.message : 'Unknown error');
     throw error;
