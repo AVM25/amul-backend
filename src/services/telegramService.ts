@@ -41,6 +41,9 @@ const pendingEmails = new Map<number, string>();
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const username = msg.from?.username;
+    if (username) {
+    await telegramService.handleBotStart(username, chatId);
+  }
   
   if (username) {
     // Check if user already has an email in database
