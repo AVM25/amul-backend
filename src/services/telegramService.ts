@@ -606,34 +606,6 @@ class TelegramService {
     
     if (!this.botToken) {
       console.warn('⚠️ TELEGRAM_BOT_TOKEN not found in environment variables');
-    } else {
-      // Initialize by getting updates to populate user chat IDs
-      this.initializeUserMapping();
-    }
-  }
-
-  private async initializeUserMapping(): Promise<void> {
-    try {
-      // Get recent updates to map usernames to chat IDs
-      const updates = await this.getUpdates();
-      for (const update of updates) {
-        if (update.message?.from?.username && update.message?.chat?.id) {
-          this.userChatIds.set(update.message.from.username, update.message.chat.id);
-        }
-      }
-      console.log(`📱 Initialized Telegram user mapping for ${this.userChatIds.size} users`);
-    } catch (error) {
-      console.error('❌ Failed to initialize Telegram user mapping:', error);
-    }
-  }
-
-  private async getUpdates(): Promise<TelegramUpdate[]> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/getUpdates`);
-      return response.data.result || [];
-    } catch (error) {
-      console.error('❌ Failed to get Telegram updates:', error);
-      return [];
     }
   }
 
