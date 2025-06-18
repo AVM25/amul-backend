@@ -18,8 +18,7 @@ export const fetchAndUpdateProducts = async (): Promise<void> => {
     let addedCount = 0;
     let restockedCount = 0;
 
-    for (const Product of products) {
-      console.log(`🔁 Checking product: ${Product.name} (Qty: ${Product.inventory_quantity})`);
+    for (const product of products) {
       const existing = await Product.findOne({ productId: product._id });
 
       if (existing) {
