@@ -2,6 +2,7 @@ import mongoose, { Schema } from 'mongoose';
 import { IProduct } from '@/types';
 
 const productSchema = new Schema<IProduct>({
+  productId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   alias: { type: String, required: true },
   price: { type: Number, required: true },
