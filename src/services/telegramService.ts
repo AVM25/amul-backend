@@ -116,6 +116,7 @@ bot.onText(/\/products/, async (msg) => {
 
   try {
     const products = await Product.find({});
+    console.log("📦 Telegram pulled product:", product);
     if (products.length === 0) {
       await bot.sendMessage(chatId, 'No products available at the moment.');
       return;
