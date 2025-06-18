@@ -116,7 +116,6 @@ bot.onText(/\/products/, async (msg) => {
 
   try {
     const products = await Product.find({});
-    console.log("📦 Telegram pulled product:", product);
     if (products.length === 0) {
       await bot.sendMessage(chatId, 'No products available at the moment.');
       return;
@@ -199,7 +198,7 @@ bot.on('callback_query', async (callbackQuery) => {
         await bot.editMessageText(
           `📦 <b>${product.name}</b>\n\n` +
           `💰 Price: ₹${product.price}\n` +
-          `📊 Stock: ${product.inventoryQuantity} units (Last Checked: ${new Date(product.lastChecked).toLocaleString()})\n` +
+          `📊 Stock: ${product.inventoryQuantity} units\n` +
           `\n${existingSubscription ? '✅ You are subscribed to this product' : 'Click below to subscribe for stock updates'}`,
           {
             chat_id: chatId,
