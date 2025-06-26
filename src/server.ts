@@ -10,17 +10,19 @@ import healthRoutes from '@/routes/healthRoutes';
 import testEmailRoutes from '@/routes/testEmailRoutes';
 import telegramRoutes from './routes/telegramRoutes';
 import apiRoutes from './routes/api';
-app.use('/api', apiRoutes);
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Routes
+app.use('/api', apiRoutes);
 app.use('/api', testEmailRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api', subscriptionRoutes);
