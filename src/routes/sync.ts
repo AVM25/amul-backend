@@ -6,10 +6,10 @@ const router = express.Router();
 router.get('/sync-products', async (req, res) => {
   try {
     await fetchAndUpdateProducts();
-    res.status(200).json({ message: 'Product sync completed.' });
+    res.json({ success: true, message: 'Products synced' });
   } catch (error) {
-    console.error('Sync error:', error);
-    res.status(500).json({ error: 'Failed to sync products.' });
+    console.error('❌ Error syncing products via /api/sync-products:', error);
+    res.status(500).json({ success: false, error: 'Failed to sync products' });
   }
 });
 
