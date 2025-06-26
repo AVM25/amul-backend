@@ -9,8 +9,8 @@ import subscriptionRoutes from '@/routes/subscriptionRoutes';
 import healthRoutes from '@/routes/healthRoutes';
 import testEmailRoutes from '@/routes/testEmailRoutes';
 import telegramRoutes from './routes/telegramRoutes';
-import syncRouter from './routes/sync';
-app.use('/api', syncRouter);
+import apiRoutes from './routes/api';
+app.use('/api', apiRoutes);
 
 dotenv.config();
 
